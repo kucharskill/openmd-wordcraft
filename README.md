@@ -51,6 +51,7 @@ If Markdown was edited externally, OpenMD asks whether to overwrite it. Declinin
 ## Metadata, comments, and images
 
 - YAML front matter is retained verbatim. UTF-8 BOM and newline style are preserved.
+- YAML metadata is also passed to Pandoc: `lang: pl-PL` sets Polish document and proofing language, while title, author, and other supported fields populate DOCX properties. An embedded body-only XML template prevents an extra visible title/author/date block. It is extracted to `%TEMP%\openmd-wordcraft\templates\body-only.docx.xml` and restored if missing or modified. No separate template file is needed beside the executable.
 - HTML comments are collected in source order and placed after YAML, before the content. One generated HTML comment explains their relocation. Repeated opening does not duplicate this notice. Comment examples in code blocks remain code.
 - Word comments use Pandoc `.comment-start` and `.comment-end` spans. Highlights use `markdown+mark`, including `==highlighted text==`.
 - Unchanged images are recognized by SHA-256 and mapped back to their original paths. Identical images originally stored at different paths use the first recorded match.

@@ -9,6 +9,7 @@ See the [project README](../README.md) for setup, behavior, configuration, and l
 ```
 
 - `OpenMd.cs`: C# 5 / .NET Framework Windows application.
+- `body-only.docx.xml`: XML template embedded during compilation, extracted to Windows TEMP at runtime.
 - `openmd.exe`: portable launcher, with no console or main window.
 - `build.cmd`: compile with the .NET Framework compiler.
 - `test.ps1`: synthetic conversion and live synchronization checks.

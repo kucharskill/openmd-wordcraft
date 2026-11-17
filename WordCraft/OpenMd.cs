@@ -18,8 +18,8 @@ using System.Reflection;
 
 [assembly: AssemblyTitle("OpenMD for WordCraft")]
 [assembly: AssemblyProduct("OpenMD for WordCraft")]
-[assembly: AssemblyVersion("0.1.0.0")]
-[assembly: AssemblyFileVersion("0.1.0.0")]
+[assembly: AssemblyVersion("0.1.1.0")]
+[assembly: AssemblyFileVersion("0.1.1.0")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 kucharskill")]
 
 namespace OpenMdWordCraft
@@ -58,7 +58,7 @@ namespace OpenMdWordCraft
                 ResultPath = Option(args, "--result");
                 if (args.Contains("--version"))
                 {
-                    WriteResult(new { version = "0.1.0" }); Report("OpenMD for WordCraft 0.1.0"); return 0;
+                    WriteResult(new { version = "0.1.1" }); Report("OpenMD for WordCraft 0.1.1"); return 0;
                 }
                 if (args.Contains("--help"))
                 {
@@ -220,6 +220,40 @@ namespace OpenMdWordCraft
             return Path.GetFullPath(Path.Combine(baseDirectory, Uri.UnescapeDataString(target.Replace('/', Path.DirectorySeparatorChar))));
         }
 
+        static string EnsureTemplate()
+        {
+            byte[] bytes;
+            using (Stream resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("OpenMd.BodyOnlyTemplate"))
+            using (MemoryStream copy = new MemoryStream())
+            {
+                if (resource == null) throw new IOException("The embedded DOCX template is missing.");
+                resource.CopyTo(copy); bytes = copy.ToArray();
+            }
+            string folder = Path.Combine(Home, "templates"); Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, "body-only.docx.xml");
+            using (Mutex mutex = new Mutex(false, "Local\\OpenMdWordCraft-BodyOnlyTemplate"))
+            {
+                bool held;
+                try { held = mutex.WaitOne(10000); } catch (AbandonedMutexException) { held = true; }
+                if (!held) throw new IOException("The DOCX template is busy. Please try again.");
+                try
+                {
+                    if (!File.Exists(path) || Hash(File.ReadAllBytes(path)) != Hash(bytes))
+                    {
+                        string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                        try
+                        {
+                            File.WriteAllBytes(temporary, bytes);
+                            if (File.Exists(path)) File.Replace(temporary, path, null); else File.Move(temporary, path);
+                        }
+                        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+                    }
+                }
+                finally { mutex.ReleaseMutex(); }
+            }
+            return path;
+        }
+
         static Session Prepare(string source, Settings settings)
         {
             byte[] bytes = File.ReadAllBytes(source);
@@ -247,7 +281,7 @@ namespace OpenMdWordCraft
             s.Docx = Path.Combine(directory, documentName);
             File.WriteAllBytes(Path.Combine(directory, "original.md"), bytes);
             Match front = Regex.Match(text, @"\A---[ \t]*\r?\n.*?^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)", RegexOptions.Multiline | RegexOptions.Singleline);
-            if (front.Success) { s.FrontMatter = front.Value; text = text.Substring(front.Length); }
+            if (front.Success) s.FrontMatter = front.Value;
             string clean = Path.Combine(directory, "body.md"); File.WriteAllText(clean, text, Utf8);
             string astPath = Path.Combine(directory, "input.json");
             Pandoc(s, clean, "-f", "markdown+mark", "-t", "json", "-o", astPath);
@@ -259,7 +293,6 @@ namespace OpenMdWordCraft
                 Pandoc(s, clean, "-f", "markdown+mark-pipe_tables", "-t", "json", "-o", withoutPipes);
                 s.UsePipeTables = TableCount(ast) > TableCount(Json.DeserializeObject(File.ReadAllText(withoutPipes, Utf8)));
             }
-            ast["meta"] = new Dictionary<string, object>();
             bool chosenDirectory = false;
             Walk(ast, delegate(Dictionary<string, object> node) {
                 if (Is(node, "RawBlock") || Is(node, "RawInline"))
@@ -281,7 +314,7 @@ namespace OpenMdWordCraft
                 target[0] = local;
             });
             WriteJson(astPath, ast);
-            Pandoc(s, astPath, "-f", "json", "-t", "docx", "-o", s.Docx);
+            Pandoc(s, astPath, "-f", "json", "-t", "docx", "--template", EnsureTemplate(), "-o", s.Docx);
             s.DocxHash = Hash(File.ReadAllBytes(s.Docx)); SaveSession(s);
             return s;
         }

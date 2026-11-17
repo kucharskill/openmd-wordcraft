@@ -50,7 +50,7 @@ foreach($item in @(@('old',[Drawing.Color]::Red),@('new',[Drawing.Color]::Blue))
     try { $g.Clear($item[1]); $bmp.Save((Join-Path $assets ($item[0]+'.png')),[Drawing.Imaging.ImageFormat]::Png) }
     finally { $g.Dispose(); $bmp.Dispose() }
 }
-$front="---`r`ntitle: 'Dosłowny: YAML'`r`ntags: [a, b]`r`ncustom: {x: 1}`r`n---`r`n"
+$front="---`r`ntitle: 'Dosłowny: YAML'`r`nauthor: TEMPLATE_AUTHOR`r`ndate: '2026-11-17'`r`nlang: pl-PL`r`ntags: [a, b]`r`ncustom: {x: 1}`r`n---`r`n"
 $md=$front+@'
 
 <!-- openmd: Komentarze HTML przeniesiono na początek dokumentu z ich pierwotnych miejsc w treści z powodu konwersji MD -> DOCX -> MD. -->
@@ -79,6 +79,26 @@ $originalImageHash=(Get-FileHash -LiteralPath (Join-Path $assets 'old.png')).Has
 [IO.File]::WriteAllText($source,$md,[Text.UTF8Encoding]::new($true))
 $prepared=Prepare $source
 Assert ([IO.Path]::GetFileName($prepared.docx) -ceq 'próba.docx') 'DOCX uses original document name'
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip=[IO.Compression.ZipFile]::OpenRead($prepared.docx)
+try {
+    $parts=@{}
+    foreach($part in @('docProps/core.xml','word/document.xml','word/styles.xml')){
+        $reader=[IO.StreamReader]::new($zip.GetEntry($part).Open())
+        try {$parts[$part]=$reader.ReadToEnd()} finally {$reader.Dispose()}
+    }
+    Assert ($parts['docProps/core.xml'].Contains('TEMPLATE_AUTHOR')) 'Author metadata retained in DOCX'
+    Assert ($parts['docProps/core.xml'].Contains('Dosłowny: YAML')) 'Title metadata retained in DOCX'
+    Assert (-not $parts['word/document.xml'].Contains('TEMPLATE_AUTHOR')) 'No visible author block'
+    Assert (-not $parts['word/document.xml'].Contains('Dosłowny: YAML')) 'No visible title block'
+    Assert (-not $parts['word/document.xml'].Contains('2026-11-17')) 'No visible date block'
+    Assert ($parts['word/styles.xml'] -match '<w:lang\b[^>]*w:val="pl-PL"') 'Polish proofing language set in DOCX'
+}finally{$zip.Dispose()}
+$template=Join-Path $env:TEMP 'openmd-wordcraft\templates\body-only.docx.xml'
+Assert (Test-Path -LiteralPath $template) 'Embedded template extracted to TEMP'
+[IO.File]::WriteAllText($template,'INVALID TEMPLATE')
+$restored=Prepare $source
+Assert ((Get-Content -Raw -LiteralPath $template).Contains('$body$')) 'Modified template restored from embedded resource'
 $before=[Convert]::ToBase64String([IO.File]::ReadAllBytes($source))
 Sync $prepared
 Assert ($before -ceq [Convert]::ToBase64String([IO.File]::ReadAllBytes($source))) 'No save means no Markdown rewrite'
