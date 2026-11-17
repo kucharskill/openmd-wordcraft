@@ -1,5 +1,7 @@
 # OpenMD for WordCraft
 
+WordCraft, part of the ArtCraft suite, is a great application. Its Markdown support is still at an early stage, however: Markdown export does not save image files, and YAML front matter is displayed as document content and can be damaged when the formatted document is saved. OpenMD is a temporary workaround that makes it possible to work with Markdown files in WordCraft while its native Markdown support is still incomplete.
+
 Edit Markdown in WordCraft through a temporary DOCX, then synchronize saved changes back to the original Markdown file. OpenMD preserves YAML front matter, retains HTML comments, restores image paths, and optionally commits saved changes to a local Git repository.
 
 A small Windows application with no console or main window. File selection, conflict dialogs, and a notification-area icon provide the interface.
