@@ -208,4 +208,10 @@ try {
     if($owned -and -not $owned.HasExited){$owned.Kill()}
     $env:WORDCRAFT_PROFILE_DIR=$oldProfile; $env:WORDCRAFT_NO_PREFS=$oldNoPrefs
 }
+$verifiedInputs=@{}
+Get-ChildItem -LiteralPath $PSScriptRoot -File | Where-Object { $_.Extension -in @('.cs','.cmd','.ps1','.xml') } | ForEach-Object {
+    $verifiedInputs[$_.Name]=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+}
+$verification=@{inputs=$verifiedInputs;executable=(Get-FileHash -LiteralPath $launcher -Algorithm SHA256).Hash;checks=$script:checks;verifiedUtc=[DateTime]::UtcNow.ToString('o')}
+[IO.File]::WriteAllText((Join-Path (Split-Path $PSScriptRoot) '.tmp\release-verification.json'),($verification|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
 Write-Host "PASS: $script:checks checks. Test files: $testRoot"
