@@ -4,6 +4,8 @@ Edit Markdown in WordCraft through a temporary DOCX, then synchronize saved chan
 
 A small Windows application with no console or main window. File selection, conflict dialogs, and a notification-area icon provide the interface.
 
+Source is available on [GitHub](https://github.com/kucharskill/openmd-wordcraft). Download the [portable executable](https://github.com/kucharskill/openmd-wordcraft/raw/refs/heads/main/WordCraft/openmd.exe) or build it from source. Portable ZIP archives can be created with the packaging command below.
+
 ## Requirements
 
 - Windows with .NET Framework 4.8. No .NET SDK, Rust, or Visual Studio is needed to run the launcher.
