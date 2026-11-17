@@ -6,7 +6,7 @@ Edit Markdown in WordCraft through a temporary DOCX, then synchronize saved chan
 
 A small Windows application with no console or main window. File selection, conflict dialogs, and a notification-area icon provide the interface.
 
-Source is available on [GitHub](https://github.com/kucharskill/openmd-wordcraft). Download the [portable executable](https://github.com/kucharskill/openmd-wordcraft/raw/refs/heads/main/WordCraft/openmd.exe) or build it from source. Portable ZIP archives can be created with the packaging command below.
+Source is available on [GitHub](https://github.com/kucharskill/openmd-wordcraft). Download the [latest portable executable](https://github.com/kucharskill/openmd-wordcraft/releases/latest/download/openmd.exe) from [GitHub Releases](https://github.com/kucharskill/openmd-wordcraft/releases), or build it from source. No ZIP extraction or installer is needed.
 
 ## Requirements
 
@@ -19,7 +19,7 @@ OpenMD does not bundle or install WordCraft or Pandoc. It uses no hosted API or 
 
 ## Quick start
 
-Extract the release archive, then drag an `.md` file onto `openmd.exe`, choose OpenMD in Windows **Open with**, or run:
+Download `openmd.exe`, then drag an `.md` file onto it, choose OpenMD in Windows **Open with**, or run:
 
 ```powershell
 .\openmd.exe "C:\Documents\notes.md"
@@ -35,7 +35,7 @@ Explicit executable paths are also supported:
 .\openmd.exe "C:\Documents\notes.md" --wordcraft "C:\Apps\WordCraft\wordcraft.exe" --pandoc "C:\Tools\pandoc.exe"
 ```
 
-From a source checkout, the executable is `WordCraft\openmd.exe`.
+When building from a source checkout, the output is `WordCraft\openmd.exe`. Generated executables are excluded from Git and distributed as release assets.
 
 ## Editing and synchronization
 
@@ -88,13 +88,7 @@ The build uses the Windows .NET Framework `csc.exe` and standard framework assem
 
 Synthetic integration tests cover metadata, HTML and Word comments, highlights, image addition and removal, fallback directories, Unicode paths, save conflicts, stable DOCX paths, locked-file fallback, and live GUI save synchronization through WordCraft's authenticated localhost control channel. Fixtures stay in the repository's `.tmp/`; runtime sessions use Windows TEMP. No production documents are needed.
 
-Create a portable archive with an explicit file allowlist:
-
-```powershell
-.\WordCraft\package.ps1
-```
-
-The archive contains only `openmd.exe`, `README.md`, and `LICENSE`. Output and its SHA-256 checksum are written under `.tmp/releases/`.
+GitHub Releases distribute the single `openmd.exe` file. The release notes identify the version and SHA-256 checksum. The embedded template requires no companion file.
 
 ## Diagnostic options
 
